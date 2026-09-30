@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="pptx-preview.bundle.js"></script>
+<script src="viewer_controls.js"></script>
+<style>
+  html, body { margin: 0; background: #e4e4ea; }
+  #pptx-wrapper { margin: 12px auto; }
+  /* the library paints its wrapper black, which showed as black bars between slides */
+  .pptx-preview-wrapper { background: transparent !important; }
+  .pptx-preview-slide-wrapper { box-shadow: 0 2px 10px rgba(0,0,0,0.15); margin-bottom: 16px !important; }
+  #status { color: #888; text-align: center; margin-top: 40px; font-family: sans-serif; }
+</style>
+</head>
+<body>
+<div id="status">Loading slides…</div>
+<div id="pptx-wrapper"></div>
+<script>
+window.onerror = function (message, source, lineno) {
+  var el = document.getElementById('status');
+  if (el) {
+    el.style.display = 'block';
+    el.innerHTML = '<span style="color:#c0392b">Script error: ' + message + ' (line ' + lineno + ')</span>';
+  }
+};
+function base64ToArrayBuffer(base64) {
+  var binary = atob(base64);
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+var previewer;
+function renderPptx(base64) {
+  try {
+    if (typeof PptxPreviewLib === 'undefined') {
+      document.getElementById('status').innerHTML = '<span style="color:#c0392b">Renderer script failed to load.</span>';
+      return;
+    }
+    var arrayBuffer = base64ToArrayBuffer(base64);
+    var w = Math.min(window.innerWidth - 24, 960);
+    if (!previewer) {
+      previewer = PptxPreviewLib.init(document.getElementById('pptx-wrapper'), { width: w });
+    }
+    previewer.preview(arrayBuffer).then(function () {
+      document.getElementById('status').style.display = 'none';
+      // pptx-preview names each slide's wrapper div "pptx-preview-slide-wrapper-N"; the
+      // shared base class lets our controls script find and count them for the indicator.
+      OmniViewerControls.init({
+        zoomTargetSelector: '#pptx-wrapper',
+        pageSelector: '.pptx-preview-slide-wrapper',
+        label: 'Slide'
+      });
+      OmniViewerControls.refreshPages();
+    }).catch(function (err) {
+      document.getElementById('status').style.display = 'block';
+      document.getElementById('status').innerHTML = '<span style="color:#c0392b">Could not render this presentation: ' + (err && err.message ? err.message : err) + '</span>';
+    });
+  } catch (e) {
+    document.getElementById('status').style.display = 'block';
+    document.getElementById('status').innerHTML = '<span style="color:#c0392b">Error: ' + e.message + '</span>';
+  }
+}
+</script>
+</body>
+</html>
