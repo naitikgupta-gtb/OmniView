@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="mammoth.browser.min.js"></script>
+<script src="viewer_controls.js"></script>
+<style>
+  html, body { margin: 0; background: #d9d9de; font-family: Calibri, Carlito, Roboto, "Segoe UI", Arial, sans-serif; color: #000; }
+  #content { padding: 12px 0 40px 0; }
+  .doc-page {
+    background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    box-sizing: border-box; margin: 0 auto 12px auto; position: relative; overflow: hidden;
+    font-size: 14.67px;           /* 11pt at 96dpi, Word's default body size */
+    line-height: 1.15;
+  }
+  .page-body { overflow: hidden; word-wrap: break-word; }
+  .page-number { position: absolute; left: 0; right: 0; text-align: center; font-size: 10px; color: #888; }
+  img { max-width: 100%; height: auto; }
+  p { margin: 0 0 10.7px 0; }              /* Word: 8pt space after */
+  table { border-collapse: collapse; width: 100%; margin: 0 0 10px 0; }
+  td, th { border: 1px solid #000; padding: 3px 6px; vertical-align: top; }
+  h1, h2, h3, h4, h5, h6 { font-family: "Calibri Light", Calibri, Carlito, Roboto, Arial, sans-serif; font-weight: normal; margin: 16px 0 4px 0; color: #2F5496; }
+  h1 { font-size: 21px; } h2 { font-size: 17.3px; } h3 { font-size: 16px; color: #1F3763; } h4, h5, h6 { font-size: 14.67px; }
+  h1.doc-title { font-size: 37px; color: #000; margin: 0 0 10px 0; line-height: 1.05; }
+  p.doc-subtitle { font-size: 16px; color: #5a5a5a; letter-spacing: 0.5px; }
+  ul, ol { margin: 0 0 10.7px 0; padding-left: 36px; }
+  #status { color: #666; text-align: center; margin-top: 40px; font-size: 16px; }
+</style>
+</head>
+<body>
+<div id="content"><div id="status">Loading document…</div></div>
+<script>
+function base64ToArrayBuffer(base64) {
+  var binary = atob(base64);
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+var DEFAULT_META = { w: 11906, h: 16838, top: 1440, right: 1440, bottom: 1440, left: 1440 }; // A4, 1" margins (twips)
+
+function textNodesOf(n, arr) {
+  arr = arr || [];
+  Array.prototype.forEach.call(n.childNodes, function (c) {
+    if (c.nodeType === 3) arr.push(c); else if (c.nodeType === 1) textNodesOf(c, arr);
+  });
+  return arr;
+}
+// keepHead: keep only the first n characters; otherwise drop the first n characters.
+function trimTo(node, n, keepHead) {
+  var pos = 0;
+  textNodesOf(node).forEach(function (t) {
+    var len = t.data.length;
+    if (keepHead) { if (pos >= n) t.data = ''; else if (pos + len > n) t.data = t.data.slice(0, n - pos); }
+    else { if (pos + len <= n) t.data = ''; else if (pos < n) t.data = t.data.slice(n - pos); }
+    pos += len;
+  });
+  return node;
+}
+
+// Lays the document out on real page-sized cards (size + margins read from the .docx),
+// filling each page line by line like Word does: long paragraphs and lists continue on the
+// next page instead of leaving a gap at the bottom.
+function paginate(html, meta) {
+  var container = document.getElementById('content');
+  container.innerHTML = '';
+
+  var staging = document.createElement('div');
+  staging.innerHTML = html;
+  var nodes = Array.prototype.slice.call(staging.childNodes);
+  if (nodes.length === 0) { container.innerHTML = '<div id="status">No readable text found in this file.</div>'; return; }
+
+  var pw = meta.w / 15, ph = meta.h / 15;                 // twips -> CSS px (1440 twips = 96px)
+  var mt = meta.top / 15, mr = meta.right / 15, mb = meta.bottom / 15, ml = meta.left / 15;
+  var bodyH = ph - mt - mb;
+  var pageCount = 0, page, body;
+
+  function newPage() {
+    pageCount++;
+    page = document.createElement('div');
+    page.className = 'doc-page';
+    page.style.width = pw + 'px'; page.style.height = ph + 'px';
+    page.style.padding = mt + 'px ' + mr + 'px ' + mb + 'px ' + ml + 'px';
+    body = document.createElement('div');
+    body.className = 'page-body';
+    body.style.height = bodyH + 'px';
+    page.appendChild(body);
+    var num = document.createElement('div');
+    num.className = 'page-number'; num.style.bottom = Math.max(6, mb / 2 - 6) + 'px'; num.innerText = String(pageCount);
+    page.appendChild(num);
+    container.appendChild(page);
+  }
+  function fits() { return body.scrollHeight <= body.clientHeight + 1; }
+  function isEmpty() { return body.childNodes.length === 0; }
+
+  // Splits `rest` (a paragraph) into a head that fits the space left on this page and a tail.
+  function splitToFit(rest) {
+    var text = rest.textContent, cuts = [];
+    for (var i = 1; i < text.length; i++) if (/\s/.test(text[i - 1]) && !/\s/.test(text[i])) cuts.push(i);
+    if (cuts.length === 0) return null;
+    function ok(pos) {
+      var probe = trimTo(rest.cloneNode(true), pos, true);
+      body.appendChild(probe); var r = fits(); body.removeChild(probe); return r;
+    }
+    var lo = 0, hi = cuts.length - 1, best = -1;
+    while (lo <= hi) { var mid = (lo + hi) >> 1; if (ok(cuts[mid])) { best = mid; lo = mid + 1; } else hi = mid - 1; }
+    if (best < 0) return null;
+    return { head: trimTo(rest.cloneNode(true), cuts[best], true), tail: trimTo(rest.cloneNode(true), cuts[best], false) };
+  }
+
+  function place(node) {
+    body.appendChild(node);
+    if (fits()) return;
+    var tag = node.tagName;
+
+    if (tag === 'UL' || tag === 'OL') {                     // fill list item by item
+      body.removeChild(node);
+      var items = Array.prototype.slice.call(node.children), done = 0;
+      var holder = node.cloneNode(false); body.appendChild(holder);
+      items.forEach(function (li) {
+        holder.appendChild(li);
+        if (!fits()) {
+          holder.removeChild(li);
+          if (holder.childNodes.length === 0) body.removeChild(holder);
+          newPage();
+          holder = node.cloneNode(false);
+          if (tag === 'OL') holder.setAttribute('start', String(done + 1));
+          body.appendChild(holder); holder.appendChild(li);
+        }
+        done++;
+      });
+      return;
+    }
+    if (tag === 'P' && node.textContent.length > 30) {      // continue paragraph on next page
+      body.removeChild(node);
+      var rest = node;
+      while (rest) {
+        body.appendChild(rest);
+        if (fits()) { rest = null; break; }
+        body.removeChild(rest);
+        var parts = splitToFit(rest);
+        if (parts) { body.appendChild(parts.head); rest = parts.tail; newPage(); }
+        else if (!isEmpty()) { newPage(); }                       // retry on a fresh page
+        else { body.appendChild(rest); rest = null; }             // cannot split: accept overflow
+      }
+      return;
+    }
+    // Headings, tables, images: keep whole; move to a fresh page if the current one has content.
+    if (!isEmpty() && body.childNodes.length > 1) {
+      body.removeChild(node); newPage(); body.appendChild(node);
+    }
+    if (!fits()) { body.style.height = 'auto'; page.style.height = 'auto'; }   // taller than a page: let it grow
+  }
+
+  newPage();
+  nodes.forEach(place);
+
+  var vw = Math.min(window.innerWidth, screen.width || window.innerWidth);
+  var fit = Math.min(1, (vw - 12) / pw);     // start with the whole page width visible
+  OmniViewerControls.init({
+    zoomTargetSelector: '#content', pageSelector: '.doc-page', label: 'Page',
+    initialScale: fit, minScale: fit * 0.6, maxScale: 4
+  });
+  OmniViewerControls.refreshPages();
+}
+
+function renderDoc(base64, meta) {
+  try {
+    meta = meta || DEFAULT_META;
+    var options = { styleMap: [
+      "p[style-name='Title'] => h1.doc-title:fresh",
+      "p[style-name='Subtitle'] => p.doc-subtitle:fresh"
+    ]};
+    mammoth.convertToHtml({ arrayBuffer: base64ToArrayBuffer(base64) }, options)
+      .then(function (result) { paginate(result.value || '', meta); })
+      .catch(function (err) {
+        document.getElementById('content').innerHTML = '<div id="status" style="color:#c0392b">Could not render this document: ' + err.message + '</div>';
+      });
+  } catch (e) {
+    document.getElementById('content').innerHTML = '<div id="status" style="color:#c0392b">Error: ' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>
