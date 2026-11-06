@@ -1,0 +1,166 @@
+:root {
+  --bg: #fafafb;
+  --ink: #17181c;
+  --ink-soft: #5b5e68;
+  --line: #e4e4e9;
+  --blue: #3d6eff;
+
+  --pdf: #e5484d;
+  --doc: #3d6eff;
+  --sheet: #30a46c;
+  --slide: #f76b15;
+  --code: #8e4ec6;
+  --image: #00a2c7;
+  --video: #e93d82;
+  --audio: #ffb224;
+  --archive: #6e6e6e;
+  --text: #767676;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; height: 100%;
+  background: var(--bg); color: var(--ink);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: contain;
+}
+#app { height: 100%; display: flex; flex-direction: column; }
+button { font-family: inherit; }
+img, video { max-width: 100%; }
+
+/* ---------- Home screen ---------- */
+.home {
+  flex: 1;
+  display: flex; flex-direction: column;
+  padding: max(24px, env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+}
+.home-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 19px; letter-spacing: -0.01em;
+  margin-bottom: 44px;
+}
+.brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--blue); position: relative; flex: none; }
+.brand-mark::before, .brand-mark::after { content: ""; position: absolute; left: 9px; right: 9px; height: 2.5px; background: #fff; border-radius: 2px; }
+.brand-mark::before { top: 11px; } .brand-mark::after { top: 17px; }
+
+.home-hero { text-align: center; margin: 12px 0 32px; }
+.home-hero h1 { font-size: 26px; letter-spacing: -0.01em; margin: 0 0 8px; }
+.home-hero p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0; max-width: 32ch; margin-inline: auto; }
+
+.picker {
+  border: 1.5px dashed var(--line);
+  border-radius: 18px;
+  padding: 36px 20px;
+  text-align: center;
+  background: #fff;
+  margin-bottom: 28px;
+}
+.picker-icon {
+  width: 52px; height: 52px; margin: 0 auto 14px;
+  border-radius: 14px; background: color-mix(in srgb, var(--blue) 12%, white);
+  display: flex; align-items: center; justify-content: center;
+}
+.picker-icon svg { width: 24px; height: 24px; color: var(--blue); }
+.choose-btn {
+  background: var(--ink); color: #fff; border: none;
+  font-weight: 600; font-size: 15.5px;
+  padding: 13px 22px; border-radius: 12px;
+  margin-top: 4px;
+}
+.choose-btn:active { background: var(--blue); }
+.picker-note { font-size: 13px; color: var(--ink-soft); margin-top: 10px; }
+
+.category-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.category-chip {
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px 10px; text-align: center;
+}
+.category-chip .dot { width: 9px; height: 9px; border-radius: 3px; margin: 0 auto 8px; }
+.category-chip span { font-size: 12.5px; color: var(--ink-soft); font-weight: 500; }
+
+.home-footer { text-align: center; color: var(--ink-soft); font-size: 12.5px; margin-top: auto; padding-top: 28px; }
+
+/* ---------- Viewer screen ---------- */
+.viewer { flex: 1; display: none; flex-direction: column; min-height: 0; }
+.viewer.active { display: flex; }
+
+.viewer-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  border-bottom: 1px solid var(--line);
+  background: #fff; flex: none;
+}
+.back-btn {
+  background: none; border: none; padding: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink); flex: none;
+}
+.back-btn svg { width: 22px; height: 22px; }
+.viewer-title { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+.viewer-body { flex: 1; min-height: 0; overflow: auto; background: #fff; position: relative; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; }
+.viewer-body.on-grey { background: #e4e4ea; }
+
+.center-msg {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px; color: var(--ink-soft); font-size: 14.5px; text-align: center; padding: 24px;
+}
+.spinner {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 3px solid var(--line); border-top-color: var(--blue);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Simple viewers */
+.img-view { height: 100%; display: flex; align-items: center; justify-content: center; background: #111; touch-action: none; }
+.img-view img { max-height: 100%; transform-origin: center; }
+
+.media-view { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; }
+.media-view video { width: 100%; border-radius: 10px; background: #000; }
+.media-view audio { width: 100%; }
+.audio-badge { font-size: 56px; }
+
+.text-view { padding: 14px 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; touch-action: pan-y; }
+.code-view { padding: 12px 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #282c34; color: #abb2bf; min-height: 100%; touch-action: pan-x pan-y; }
+.code-line { display: flex; padding: 0 12px; white-space: pre; }
+.code-line .ln { color: #5c6370; min-width: 2.6em; flex: none; user-select: none; text-align: right; padding-right: 14px; }
+
+.table-wrap { padding: 8px; touch-action: pan-x pan-y; }
+table.simple-table { border-collapse: collapse; width: max-content; font-size: 13px; }
+table.simple-table td, table.simple-table th { border: 1px solid #ddd; padding: 5px 10px; white-space: nowrap; }
+table.simple-table th { background: #f5f5f5; font-weight: 700; }
+
+.pdf-frame { width: 100%; height: 100%; border: none; }
+
+/* Office docs (docx/xlsx/pptx) reuse the same floating controls as the Android build */
+.office-frame { width: 100%; height: 100%; border: none; background: #fff; }
+
+.unsupported-box { padding: 32px 24px; text-align: center; color: var(--ink-soft); font-size: 15px; line-height: 1.6; }
+
+/* DOCX page content typography (matches the Android app's Word-like look) */
+.doc-page p { margin: 0 0 10.7px; }
+.doc-page table { border-collapse: collapse; width: 100%; margin: 0 0 10px; }
+.doc-page td, .doc-page th { border: 1px solid #000; padding: 3px 6px; vertical-align: top; }
+.doc-page h1, .doc-page h2, .doc-page h3, .doc-page h4, .doc-page h5, .doc-page h6 {
+  font-family: "Calibri Light", Calibri, Carlito, Roboto, Arial, sans-serif;
+  font-weight: normal; margin: 16px 0 4px; color: #2f5496;
+}
+.doc-page h1 { font-size: 21px; }
+.doc-page h2 { font-size: 17.3px; }
+.doc-page h3 { font-size: 16px; color: #1f3763; }
+.doc-page h1.doc-title { font-size: 37px; color: #000; margin: 0 0 10px; line-height: 1.05; }
+.doc-page p.doc-subtitle { font-size: 16px; color: #5a5a5a; letter-spacing: 0.5px; }
+.doc-page ul, .doc-page ol { margin: 0 0 10.7px; padding-left: 36px; }
+.doc-page img { max-width: 100%; height: auto; }
+
+/* PPTX: the library paints its own wrapper black, which showed as black bars between slides */
+.pptx-preview-wrapper { background: transparent !important; }
+.pptx-preview-slide-wrapper { box-shadow: 0 2px 10px rgba(0,0,0,0.15); margin-bottom: 16px !important; }
+
+/* PDF pages */
+.pdf-page { background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.3); margin: 0 auto 12px; position: relative; }
+.pdf-page canvas { display: block; width: 100%; height: 100%; }

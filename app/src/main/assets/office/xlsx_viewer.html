@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="xlsx.full.min.js"></script>
+<script src="viewer_controls.js"></script>
+<style>
+  body { font-family: sans-serif; margin: 0; color: #222; }
+  .tabs {
+    display: flex; overflow-x: auto; background: #f0f4f2; position: sticky; top: 0;
+    border-bottom: 3px solid #30A46C; z-index: 10; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .tab { padding: 14px 20px; cursor: pointer; white-space: nowrap; font-size: 15px; color: #557a68; font-weight: 500; }
+  .tab.active { background: #fff; color: #1b7a4c; font-weight: 700; border-bottom: 4px solid #30A46C; margin-bottom: -3px; }
+  .sheet-wrap { display: none; padding: 4px; overflow-x: auto; }
+  .sheet-wrap.active { display: block; }
+  #sheet-scale-target { display: inline-block; }
+  table { border-collapse: collapse; width: max-content; font-size: 13px; }
+  td, th { border: 1px solid #ddd; padding: 5px 10px; white-space: nowrap; }
+  th, table tr:first-child td { background: #eef7f1; font-weight: bold; }
+  #status { color: #888; text-align: center; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div id="tabs"></div>
+<div id="sheets"><div id="status">Loading spreadsheet…</div></div>
+<script>
+function base64ToArrayBuffer(base64) {
+  var binary = atob(base64);
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+var sheetCount = 0;
+function showSheet(i) {
+  document.querySelectorAll('.tab').forEach(function (t, idx) { t.className = 'tab' + (idx === i ? ' active' : ''); });
+  document.querySelectorAll('.sheet-wrap').forEach(function (s, idx) { s.className = 'sheet-wrap' + (idx === i ? ' active' : ''); });
+  if (window.OmniViewerControls) {
+    var name = document.querySelectorAll('.tab')[i] ? document.querySelectorAll('.tab')[i].innerText : '';
+    OmniViewerControls.setLabel('Sheet ' + (i + 1) + ' / ' + sheetCount + (name ? ' \u2014 ' + name : ''));
+    OmniViewerControls.refreshPages();
+  }
+}
+function renderSheet(base64) {
+  try {
+    var data = new Uint8Array(base64ToArrayBuffer(base64));
+    var workbook = XLSX.read(data, { type: 'array' });
+    var tabsEl = document.getElementById('tabs');
+    tabsEl.setAttribute('data-notap', '1');
+    tabsEl.className = 'tabs';
+    var sheetsEl = document.getElementById('sheets');
+    sheetsEl.innerHTML = '';
+    tabsEl.innerHTML = '';
+    sheetCount = workbook.SheetNames.length;
+
+    workbook.SheetNames.forEach(function (name, i) {
+      var tab = document.createElement('div');
+      tab.className = 'tab' + (i === 0 ? ' active' : '');
+      tab.innerText = name;
+      tab.onclick = function () { showSheet(i); };
+      tabsEl.appendChild(tab);
+
+      var div = document.createElement('div');
+      div.className = 'sheet-wrap' + (i === 0 ? ' active' : '');
+      div.innerHTML = XLSX.utils.sheet_to_html(workbook.Sheets[name]);
+      sheetsEl.appendChild(div);
+    });
+
+    if (sheetCount === 0) {
+      sheetsEl.innerHTML = '<div id="status">No sheets found in this file.</div>';
+      return;
+    }
+
+    OmniViewerControls.init({
+      zoomTargetSelector: '#sheets',
+      indicatorTop: '60px',
+      label: 'Sheet'
+    });
+    showSheet(0);
+  } catch (e) {
+    document.getElementById('sheets').innerHTML = '<div style="color:#c0392b;padding:16px">Could not render this spreadsheet: ' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>

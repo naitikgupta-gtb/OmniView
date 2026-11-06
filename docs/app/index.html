@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>OmniView</title>
+<meta name="theme-color" content="#3d6eff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OmniView">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Home: file picker -->
+  <section class="home" id="homeScreen">
+    <div class="home-brand"><span class="brand-mark"></span>OmniView</div>
+
+    <div class="home-hero">
+      <h1>One app. Every file.</h1>
+      <p>Open PDFs, Word, Excel, PowerPoint, photos, video, audio, and code, right from your phone.</p>
+    </div>
+
+    <div class="picker" id="pickerBox">
+      <div class="picker-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+      </div>
+      <button class="choose-btn" id="chooseBtn">Choose a file</button>
+      <div class="picker-note">Nothing is uploaded. The file is read on your device only.</div>
+      <input type="file" id="fileInput" style="display:none">
+    </div>
+
+    <div class="category-grid">
+      <div class="category-chip"><div class="dot" style="background:var(--pdf)"></div><span>PDF</span></div>
+      <div class="category-chip"><div class="dot" style="background:var(--doc)"></div><span>Word</span></div>
+      <div class="category-chip"><div class="dot" style="background:var(--sheet)"></div><span>Excel</span></div>
+      <div class="category-chip"><div class="dot" style="background:var(--slide)"></div><span>PowerPoint</span></div>
+      <div class="category-chip"><div class="dot" style="background:var(--image)"></div><span>Photos</span></div>
+      <div class="category-chip"><div class="dot" style="background:var(--video)"></div><span>Video &amp; audio</span></div>
+      <div class="category-chip"><div class="dot" style="background:var(--code)"></div><span>Code</span></div>
+      <div class="category-chip"><div class="dot" style="background:var(--text)"></div><span>Text &amp; CSV</span></div>
+      <div class="category-chip"><div class="dot" style="background:var(--archive)"></div><span>And more</span></div>
+    </div>
+
+    <div class="home-footer">100% offline &middot; no account &middot; no ads</div>
+  </section>
+
+  <!-- Viewer -->
+  <section class="viewer" id="viewerScreen">
+    <div class="viewer-bar">
+      <button class="back-btn" id="backBtn" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="viewer-title" id="viewerTitle">File</div>
+    </div>
+    <div class="viewer-body" id="viewerBody"></div>
+  </section>
+
+</div>
+
+<script src="lib/pdf.min.js"></script>
+<script src="lib/mammoth.browser.min.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/pptx-preview.bundle.js"></script>
+<script src="code-highlight.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
